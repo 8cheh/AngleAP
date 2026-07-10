@@ -47,14 +47,23 @@ Step ：
 
 复杂度
   ↑
+  
   │  v1.7.py          ← 最完整：AI(SAM)+传统CV+Young-Laplace
+  
   │  v4.4.py          ← 完整自动化：多尺度Hough+传统CV+Young-Laplace
+  
   │  v3.7app.py       ← 3.7 的 Web 封装版（Flask 在线测量）
+  
   │  v3.7picbetter.py ← 半自动流水线主程序
+  
   │  v3.7segmenter.py ← 只做「分割 + 基准线」
+  
   │  v3.7YLCal.py     ← 只做「Young-Laplace 拟合」
+  
   │  v2.2.py          ← 手动点选 + 多项式拟合
+  
   │  v1.py (Matlab)   ← 最原始：三点画圆求接触角
+  
   └──────────────────────────────────────────────→ 自动化程度
 
 
