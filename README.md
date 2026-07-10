@@ -36,14 +36,22 @@ AngleAP/
 ### 🔬 Core Methods | 核心方法
 
 Step ：
+
 | 1 | **Droplet Localization** — Automatically locate the droplet position and size using the Hough Circle Transform algorithm. 
+
 | **液滴定位** — 基于霍夫圆检测算法，自动识别图像中液滴的位置与尺寸。 |
+
 | 2 | **Image Enhancement** — Improve droplet outline contrast and clarity using CLAHE combined with Gaussian sharpening. 
+
 | **图像增强** — 结合 CLAHE（限制对比度自适应直方图均衡化）与高斯锐化，提升液滴轮廓的对比度与清晰度。 |
+
 | 3 | **Droplet Segmentation** — Separate droplet from background using Otsu's adaptive thresholding and morphological operations; intelligently detect the solid-liquid interface baseline. 
+
 | **液滴分割** — 利用 Otsu 自适应阈值分割与形态学操作分离液滴与背景，并智能识别固-液界面基线。 |
+
 | 4 | **Contact Angle Calculation** — Numerically fit the droplet profile using the Young-Laplace equation (Runge-Kutta ODE solver + least-squares optimization); compute left/right contact angles and average them. 
-| **接触角计算** — 基于 Young-Laplace 方程对液滴轮廓进行数值拟合（龙格-库塔法求解 ODE + 最小二乘优化）；分别计算左右接触角并取平均值。 |
+
+| **接触角计算** — 基于 Young-Laplace 方程对液滴轮廓进行数值拟合；分别计算左右接触角并取平均值。 |
 
 复杂度
   ↑
