@@ -288,15 +288,25 @@ python Test/TE_contact_angle.py
 ### 🛠️ Technology Stack | 技术栈
 
 | Category | 
+
 | Image Processing | OpenCV (Hough Circle Transform, CLAHE, Otsu thresholding, morphological operations) 
+
 | OpenCV（霍夫圆变换、CLAHE、Otsu 阈值分割、形态学操作） |
+
 | Numerical Computing | SciPy (`solve_ivp` for ODE, `least_squares` for non-linear optimization）
+
 | SciPy（`solve_ivp` 求解常微分方程、`least_squares` 非线性最小二乘优化） |
+
 | Web Framework | Flask 
+
 | Flask |
+
 | Visualization | Matplotlib 
+
 | Matplotlib |
+
 | Enhancement (WIP) | `Enhancer/freeenhancer.py` — planned integration with external APIs or local GPU 
+
 | `Enhancer/freeenhancer.py` — 计划集成外部 API 或本地 GPU |
 
 ---
