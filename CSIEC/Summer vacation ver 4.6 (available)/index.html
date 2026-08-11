@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AngleAP — 接触角测量仪</title>
+<style>
+:root{--bg:#f0f2f5;--c:#fff;--p:#2563eb;--t:#1e293b;--t2:#64748b;--b:#e2e8f0;--g:#10b981;--r:12px}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Microsoft YaHei",sans-serif;background:var(--bg);color:var(--t);min-height:100vh}
+.header{background:linear-gradient(135deg,#0f172a,#1e3a5f 40%,#2563eb);color:#fff;padding:16px 20px;text-align:center}
+.header h1{font-size:1.4rem;font-weight:800}.header .sub{opacity:.8;font-size:.78rem;margin-top:2px}
+.container{max-width:1000px;margin:0 auto;padding:12px 16px}
+.card{background:var(--c);border-radius:var(--r);box-shadow:0 1px 3px rgba(0,0,0,.08);margin-bottom:10px;overflow:hidden}
+.card-hd{padding:10px 14px;border-bottom:1px solid var(--b);font-weight:700;font-size:.82rem;background:#fafbfc}
+.card-bd{padding:12px}
+.upload{border:2px dashed var(--b);border-radius:var(--r);padding:16px;text-align:center;cursor:pointer;transition:.15s}
+.upload:hover{border-color:var(--p);background:#eff6ff}
+.upload.ok{border:solid var(--g);padding:6px 12px;display:flex;align-items:center;gap:10px;font-size:.8rem}
+.tabs{display:none;gap:3px;margin-bottom:10px;background:var(--c);border-radius:var(--r);padding:4px;box-shadow:0 1px 3px rgba(0,0,0,.08)}
+.tab{flex:1;padding:9px 6px;text-align:center;cursor:pointer;font-weight:600;font-size:.76rem;border:none;background:transparent;color:var(--t2);border-radius:9px;transition:.15s}
+.tab:hover{background:#f1f5f9;color:var(--t)}
+.tab.on{background:var(--p);color:#fff}
+.panel{display:none;margin-bottom:10px}
+.toolbar{padding:6px 10px;display:flex;gap:5px;align-items:center;background:#fafbfc;border-bottom:1px solid var(--b);flex-wrap:wrap}
+.hint{padding:4px 9px;border-radius:6px;font-size:.73rem;flex:1;min-width:120px}
+.hint.w{background:#fef3c7;color:#92400e}.hint.i{background:#dbeafe;color:#1e40af}.hint.o{background:#d1fae5;color:#065f46}
+.cw{display:flex;justify-content:center;background:#e2e8f0;max-height:50vh;overflow:auto}
+canvas{display:block;cursor:crosshair}
+.btn{display:inline-flex;align-items:center;gap:3px;padding:6px 12px;border-radius:7px;font-size:.76rem;font-weight:600;border:none;cursor:pointer;transition:.15s}
+.btn:disabled{opacity:.4;cursor:not-allowed}
+.btn-g{background:var(--g);color:#fff}.btn-g:hover{background:#059669}
+.btn-o{background:#fff;color:var(--p);border:1.5px solid var(--p)}.btn-o:hover{background:#eff6ff}
+.btn-s{padding:3px 8px;font-size:.7rem}
+.stats{display:none;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:10px;margin-bottom:10px}
+.sc{background:var(--c);border-radius:var(--r);box-shadow:0 8px 20px rgba(0,0,0,.1);overflow:hidden}
+.sc-hd{padding:11px;text-align:center;color:#fff}
+.sc-hd.g{background:linear-gradient(135deg,#10b981,#059669)}
+.sc-hd.b{background:linear-gradient(135deg,#3b82f6,#2563eb)}
+.sc-hd.p{background:linear-gradient(135deg,#8b5cf6,#7c3aed)}
+.sc-bd{padding:8px 12px}
+.sc-bd table{width:100%;font-size:.72rem;border-collapse:collapse}
+.sc-bd td{padding:2px 5px;border-bottom:1px solid var(--b)}
+.sc-bd td:first-child{color:var(--t2);width:80px}
+.big{font-size:2rem;font-weight:800}.big u{font-size:.8rem;opacity:.7;text-decoration:none}
+.toast{position:fixed;top:16px;left:50%;transform:translateX(-50%);background:#1e293b;color:#fff;padding:8px 18px;border-radius:8px;font-size:.78rem;z-index:999;opacity:0;transition:.2s;pointer-events:none}
+.toast.s{opacity:1}
+.footer{text-align:center;padding:10px;color:var(--t2);font-size:.68rem}
+@media(max-width:640px){.container{padding:6px}.header{padding:12px}.header h1{font-size:1.1rem}}
+</style>
+</head>
+<body>
+<div class="header">
+  <h1>📐 AngleAP — 接触角测量仪</h1>
+  <div class="sub">OpenDrop 自动检测 + v2.2 两点多项式拟合 | 本地 Python 后端 | 精确算法</div>
+</div>
+<div class="container">
+  <!-- Upload -->
+  <div class="card">
+    <div class="card-hd">📷 上传液滴图像</div>
+    <div class="card-bd">
+      <input type="file" id="fi" accept="image/*" style="display:none">
+      <div class="upload" id="uz" onclick="document.getElementById('fi').click()">
+        <div style="font-size:1.8rem">📁</div>
+        <div style="font-weight:600">点击上传或拖放图像</div>
+        <div style="font-size:.73rem;color:var(--t2)">JPG / PNG / BMP / TIFF</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tabs -->
+  <div class="tabs" id="tabs" style="display:none">
+    <button class="tab on" data-m="od" onclick="sw('od')">🔬 OpenDrop 自动检测</button>
+    <button class="tab" data-m="poly" onclick="sw('poly')">📏 v2.2 两点多项式拟合</button>
+  </div>
+
+  <!-- OpenDrop Panel -->
+  <div class="card panel" id="pOD">
+    <div class="card-hd">🔬 OpenDrop 自动检测</div>
+    <div class="toolbar">
+      <span class="hint i" id="hOD">点击「▶ 运行」全自动测量</span>
+      <button class="btn btn-g" id="bOD" onclick="runOD()">▶ 运行</button>
+      <button class="btn btn-o btn-s" onclick="reset()">🔄 重置</button>
+      <button class="btn btn-o btn-s" onclick="exportCSV()">📥 CSV</button>
+    </div>
+    <div class="cw"><canvas id="cOD"></canvas></div>
+  </div>
+
+  <!-- v2.2 Panel -->
+  <div class="card panel" id="pPoly">
+    <div class="card-hd">📏 v2.2 两点多项式拟合</div>
+    <div class="toolbar">
+      <span class="hint w" id="hPoly">① 点击左右接触点 → ② 点「▶ 运行」</span>
+      <button class="btn btn-o btn-s" onclick="undo()">↩ 撤销</button>
+      <button class="btn btn-g" id="bPoly" onclick="runPoly()" disabled>▶ 运行</button>
+      <button class="btn btn-o btn-s" onclick="reset()">🔄 重置</button>
+      <button class="btn btn-o btn-s" onclick="exportCSV()">📥 CSV</button>
+    </div>
+    <div class="cw"><canvas id="cPoly"></canvas></div>
+  </div>
+
+  <!-- Results -->
+  <div class="stats" id="stats"></div>
+</div>
+<div class="footer">AngleAP — 基于 OpenDrop (JOSS 2020) &amp; v2.2 | Python 后端 · 100% 本地运算</div>
+<div class="toast" id="toast"></div>
+
+<script>
+// ============ STATE ============
+const S={img:null,w:0,h:0,method:'od',pts:[],result:null,imgBlob:null};
+const $=id=>document.getElementById(id);
+let _tt;
+function toast(m){const t=$('toast');t.textContent=m;t.className='toast s';clearTimeout(_tt);_tt=setTimeout(()=>t.className='toast',2200)}
+
+// ============ IMAGE LOADING ============
+$('fi').addEventListener('change',e=>{if(e.target.files[0])load(e.target.files[0])});
+const uz=$('uz');
+uz.addEventListener('dragover',e=>{e.preventDefault()});
+uz.addEventListener('drop',e=>{e.preventDefault();const f=e.dataTransfer.files[0];if(f&&f.type.startsWith('image/'))load(f)});
+
+function load(file){
+  S.imgBlob=file;
+  const r=new FileReader();
+  r.onload=function(e){
+    const img=new Image();
+    img.onload=function(){
+      S.img=img;S.w=img.naturalWidth;S.h=img.naturalHeight;S.pts=[];S.result=null;
+      $('stats').style.display='none';
+      uz.className='upload ok';
+      uz.innerHTML='<span>📷</span> <strong>'+file.name+'</strong> <span style="color:var(--t2)">'+S.w+'×'+S.h+'px</span> <button class="btn btn-o btn-s" onclick="event.stopPropagation();document.getElementById(\'fi\').click()">换图</button>';
+      $('tabs').style.display='flex';sw(S.method);
+    };img.src=e.target.result;
+  };r.readAsDataURL(file);
+}
+
+// ============ METHOD SWITCHING ============
+function sw(m){
+  S.method=m;S.pts=[];S.result=null;$('stats').style.display='none';
+  document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('on',t.dataset.m===m));
+  $('pOD').style.display=m==='od'?'block':'none';
+  $('pPoly').style.display=m==='poly'?'block':'none';
+  if(m==='od'){setup($('cOD'));if(S.img)draw($('cOD'));$('cOD').onclick=null}
+  else{setup($('cPoly'));if(S.img)draw($('cPoly'));$('cPoly').onclick=click;$('bPoly').disabled=true}
+}
+function setup(cvs){if(!S.img)return;const s=Math.min(960/S.w,1);cvs.width=S.w*s;cvs.height=S.h*s;cvs.style.width=cvs.width+'px';cvs.style.height=cvs.height+'px';cvs._s=s}
+function draw(cvs){if(!S.img)return;cvs.getContext('2d').clearRect(0,0,cvs.width,cvs.height);cvs.getContext('2d').drawImage(S.img,0,0,cvs.width,cvs.height)}
+function reset(){S.pts=[];S.result=null;$('stats').style.display='none';$('bPoly').disabled=true;
+  if(S.method==='od'){draw($('cOD'));$('hOD').textContent='点击「▶ 运行」全自动测量';$('hOD').className='hint i'}
+  else{draw($('cPoly'));$('hPoly').textContent='① 点击左右接触点 → ② 点「▶ 运行」';$('hPoly').className='hint w'}
+}
+
+// ============ CANVAS ============
+function olay(cvs,fn){const ctx=cvs.getContext('2d');ctx.save();ctx.setTransform(cvs._s,0,0,cvs._s,0,0);fn(ctx);ctx.restore()}
+
+// ============ v2.2 POINT CLICKING ============
+function click(e){
+  if(!S.img||S.pts.length>=2)return;
+  const cvs=$('cPoly'),r=cvs.getBoundingClientRect();
+  const x=Math.round((e.clientX-r.left)*S.w/r.width),y=Math.round((e.clientY-r.top)*S.h/r.height);
+  S.pts.push({x,y});redrawPts();
+  if(S.pts.length===2){$('bPoly').disabled=false;$('hPoly').textContent='已选 L('+S.pts[0].x+','+S.pts[0].y+') R('+S.pts[1].x+','+S.pts[1].y+') → 点「▶ 运行」';$('hPoly').className='hint i'}
+  else{$('hPoly').textContent='已选左点 ('+x+','+y+') → 点击右侧接触点'}
+}
+function redrawPts(){const cvs=$('cPoly');draw(cvs);for(let i=0;i<S.pts.length;i++){const pt=S.pts[i];olay(cvs,ctx=>{ctx.fillStyle=i===0?'#0f0':'#ff0';ctx.beginPath();ctx.arc(pt.x,pt.y,6,0,Math.PI*2);ctx.fill();ctx.fillStyle='#fff';ctx.font='bold 14px sans-serif';ctx.textAlign='center';ctx.fillText((i+1).toString(),pt.x,pt.y-12)})}}
+function undo(){if(!S.pts.length)return;S.pts.pop();$('bPoly').disabled=true;if(!S.pts.length){draw($('cPoly'));$('hPoly').textContent='① 点击左右接触点 → ② 点「▶ 运行」';$('hPoly').className='hint w'}else{redrawPts();$('hPoly').textContent='已选 '+S.pts.length+'/2 点'}}
+
+// ============ API CALLS ============
+async function runOD(){
+  if(!S.imgBlob){toast('⚠️ 请先上传图像');return}
+  $('hOD').textContent='正在计算...';$('hOD').className='hint w';$('bOD').disabled=true;$('bOD').textContent='⏳ 计算中...';
+  const fd=new FormData();fd.append('image',S.imgBlob);
+  try{
+    const res=await fetch('/api/opendrop',{method:'POST',body:fd});
+    const data=await res.json();
+    S.result=data;S.method='od';
+    if(data.annotated_image){showAnnotated($('cOD'),data.annotated_image)}
+    showStats(data);
+    if(data.error){$('hOD').textContent='❌ '+data.error;$('hOD').className='hint w'}
+    else{$('hOD').textContent='✅ L:'+(data.left_angle??'—')+'° R:'+(data.right_angle??'—')+'° Avg:'+(data.avg_angle??'—')+'°';$('hOD').className='hint o'}
+  }catch(e){$('hOD').textContent='❌ 服务器未连接: '+e.message;$('hOD').className='hint w';toast('❌ 请先启动服务器: python server.py')}
+  $('bOD').disabled=false;$('bOD').textContent='▶ 运行';
+}
+
+async function runPoly(){
+  if(S.pts.length!==2){toast('⚠️ 请先点击两个接触点');return}
+  if(!S.imgBlob){toast('⚠️ 请先上传图像');return}
+  $('hPoly').textContent='正在计算...';$('hPoly').className='hint w';$('bPoly').disabled=true;
+  const fd=new FormData();fd.append('image',S.imgBlob);
+  fd.append('p1_x',S.pts[0].x);fd.append('p1_y',S.pts[0].y);
+  fd.append('p2_x',S.pts[1].x);fd.append('p2_y',S.pts[1].y);
+  try{
+    const res=await fetch('/api/polyfit',{method:'POST',body:fd});
+    const data=await res.json();
+    S.result=data;S.method='poly';
+    if(data.annotated_image){showAnnotated($('cPoly'),data.annotated_image)}
+    showStats(data);
+    if(data.error){$('hPoly').textContent='❌ '+data.error;$('hPoly').className='hint w'}
+    else{$('hPoly').textContent='✅ L:'+(data.left_angle??'—')+'° R:'+(data.right_angle??'—')+'° Avg:'+(data.avg_angle??'—')+'°';$('hPoly').className='hint o'}
+  }catch(e){$('hPoly').textContent='❌ 服务器未连接: '+e.message;$('hPoly').className='hint w';toast('❌ 请先启动服务器: python server.py')}
+  $('bPoly').disabled=false;
+}
+
+function showAnnotated(cvs,b64){
+  const img=new Image();
+  img.onload=function(){
+    const s=Math.min(960/S.w,1);cvs.width=S.w*s;cvs.height=S.h*s;cvs._s=s;
+    cvs.style.width=cvs.width+'px';cvs.style.height=cvs.height+'px';
+    cvs.getContext('2d').drawImage(img,0,0,cvs.width,cvs.height);
+  };img.src='data:image/jpeg;base64,'+b64;
+}
+
+// ============ RESULTS ============
+function showStats(d){
+  if(d.error&&d.left_angle==null&&d.right_angle==null){$('stats').innerHTML='<div class="sc"><div class="sc-hd" style="background:#ef4444"><div class="big">❌</div><div>'+d.error+'</div></div></div>'}
+  else{
+    const l=d.left_angle!=null?d.left_angle.toFixed(1)+'°':'—',r=d.right_angle!=null?d.right_angle.toFixed(1)+'°':'—',a=d.avg_angle!=null?d.avg_angle.toFixed(1)+'°':'—';
+    $('stats').innerHTML=
+      '<div class="sc"><div class="sc-hd g"><div class="big">'+a+'</div><div>平均接触角 Average</div></div><div class="sc-bd"><table><tr><td>左侧 L</td><td><b>'+l+'</b></td></tr><tr><td>右侧 R</td><td><b>'+r+'</b></td></tr><tr><td>方法</td><td>'+(d.method||'')+'</td></tr></table></div></div>'+
+      '<div class="sc"><div class="sc-hd b"><div class="big">'+l+'</div><div>左侧接触角 Left CA</div></div><div class="sc-bd"><table><tr><td>接触点</td><td>'+(d.left_contact?'('+d.left_contact.x+', '+d.left_contact.y+')':'—')+'</td></tr></table></div></div>'+
+      '<div class="sc"><div class="sc-hd p"><div class="big">'+r+'</div><div>右侧接触角 Right CA</div></div><div class="sc-bd"><table><tr><td>接触点</td><td>'+(d.right_contact?'('+d.right_contact.x+', '+d.right_contact.y+')':'—')+'</td></tr></table></div></div>';
+  }
+  $('stats').style.display='grid';
+}
+
+// ============ CSV ============
+function exportCSV(){
+  const d=S.result;if(!d||(!d.left_angle&&!d.right_angle&&d.error)){toast('⚠️ 无结果');return}
+  const r=[['Method','Left Angle','Right Angle','Average','Error'],[d.method||'',d.left_angle??'',d.right_angle??'',d.avg_angle??'',d.error||'']];
+  const csv='﻿'+r.map(row=>row.map(v=>typeof v==='string'&&(v.includes(',')||v.includes('"'))?'"'+v.replace(/"/g,'""')+'"':v).join(',')).join('\n');
+  const b=new Blob([csv],{type:'text/csv'}),u=URL.createObjectURL(b),a=document.createElement('a');a.href=u;a.download='contact_angle.csv';a.click();URL.revokeObjectURL(u);toast('📥 CSV 已导出')
+}
+
+// ============ INIT ============
+sw('od');
+</script>
+</body>
+</html>
